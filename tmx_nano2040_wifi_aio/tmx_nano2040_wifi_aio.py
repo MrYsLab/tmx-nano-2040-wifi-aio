@@ -247,11 +247,6 @@ class TmxNano2040WifiAio:
         # flag to indicate we are in shutdown mode
         self.shutdown_flag = False
 
-        # self.report_dispatch = {}
-
-        # self.the_reporter_thread.start()
-        # self.the_data_receive_thread.start()
-
         # neopixel data
         self.number_of_pixels = None
 
@@ -268,8 +263,6 @@ class TmxNano2040WifiAio:
 
         if autostart:
             self.loop.run_until_complete(self.start_aio())
-        # allow the threads to run
-        # self._run_threads()
 
     async def start_aio(self):
 
@@ -293,10 +286,6 @@ class TmxNano2040WifiAio:
                   f'{self.firmware_version[1]}.{self.firmware_version[2]}')
         command = [PrivateConstants.ENABLE_ALL_REPORTS]
         await self._send_command(command)
-
-        # Have the server reset its data structures
-        # command = [PrivateConstants.RESET]
-        # await self._send_command(command)
 
     async def analog_write(self, pin, value):
         """
@@ -1506,7 +1495,7 @@ class TmxNano2040WifiAio:
         """
                 This is the dht report handler method.
 
-                :param report:            data[0] = report error return
+                :param report:        data[0] = report error return
                                             No Errors = 0
 
                                             Checksum Error = 1
