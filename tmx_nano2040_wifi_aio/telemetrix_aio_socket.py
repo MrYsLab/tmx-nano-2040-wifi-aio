@@ -72,7 +72,7 @@ class TelemetrixAioSocket:
         """
         This method reads one byte of data from IP device
 
-        :return: Next byte
+        :return: num_bytes
         """
-        buffer = await self.reader.read(num_bytes)
+        buffer = await self.reader.readexactly(num_bytes)
         return buffer

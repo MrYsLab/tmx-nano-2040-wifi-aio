@@ -43,20 +43,24 @@ class TmxNano2040WifiAio:
     """
 
     # noinspection PyPep8,PyPep8,PyPep8
-    def __init__(self, arduino_wait=6,
+    def __init__(self, arduino_wait=1,
                  sleep_tune=0.000001,
                  autostart=True,
                  loop=None,
                  shutdown_on_exception=True,
+                 reset_board_on_shutdown=True,
                  close_loop_on_shutdown=True,
                  ip_address=None, ip_port=31335):
 
         """
-        :param arduino_wait: wait time for Arduino to reset itself
+        :param arduino_wait: wait time for Arduino to reset itself.
+                             The time is specified in seconds. Increase
+                             this value if your application does not
+                             locate the Nano Connect.
 
         :param sleep_tune: A tuning parameter (typically not changed by user)
 
-        :param autostart: If you wish to call the start method within
+        :param autostart: If you wish to manually call the start method within
                           your application, then set this to False.
 
         :param loop: optional user provided event loop
@@ -65,9 +69,12 @@ class TmxNano2040WifiAio:
                                       a RunTimeError exception, or
                                       receiving a KeyboardInterrupt exception
 
-        :param close_loop_on_shutdown: stop and close the event loop loop
-                                       when a shutdown is called or a serial
-                                       error occurs
+        :param reset_board_on_shutdown: if True, a hardware reset  of the board is
+                                        performed when the shutdown method is called.
+
+        :param close_loop_on_shutdown: If True, stop and close the event loop
+                                       when a shutdown is called or an exception
+                                       occurs
 
         :param ip_address: ip address of tcp/ip connected device.
                            This is a required parameter
@@ -77,6 +84,8 @@ class TmxNano2040WifiAio:
         """
 
         self.shutdown_on_exception = shutdown_on_exception
+
+        self.reset_board_on_shutdown = reset_board_on_shutdown
 
         self.close_loop_on_shutdown = close_loop_on_shutdown
 
@@ -235,9 +244,6 @@ class TmxNano2040WifiAio:
         # firmware version to be stored here
         self.firmware_version = []
 
-        # flag to indicate if i2c was previously enabled
-        self.i2c_enabled = False
-
         # flag to indicate if spi is initialized
         self.spi_enabled = False
 
@@ -265,6 +271,11 @@ class TmxNano2040WifiAio:
             self.loop.run_until_complete(self.start_aio())
 
     async def start_aio(self):
+        """
+        This method completes the instantiation of the TmxNano2040WifiAio
+        class. If you set autostart to False, then your application decides
+        when to complete the instantiation.
+        """
 
         self.sock = TelemetrixAioSocket(self.ip_address, self.ip_port, self.loop)
         await self.sock.start()
@@ -279,6 +290,7 @@ class TmxNano2040WifiAio:
             if not self.firmware_version:
                 if self.shutdown_on_exception:
                     await self.shutdown()
+                    await asyncio.sleep(.3)
                 raise RuntimeError(f'Telemetrix4Connect2040 firmware version')
 
         else:
@@ -291,12 +303,18 @@ class TmxNano2040WifiAio:
         """
         Set the specified pin to the specified value.
 
+        The maximum value for the Nano RP2040 is 256 and
+        you should validate this in your application.
+
+
         :param pin: arduino pin number
 
-        :param value: pin value (maximum 16 bits)
+        :param value: pin value (maximum is 255)
 
         """
 
+        if value > 255:
+            raise RuntimeError('Maximum value for analog_write is 255')
         command = [PrivateConstants.ANALOG_WRITE, pin, value]
         await self._send_command(command)
 
@@ -368,7 +386,9 @@ class TmxNano2040WifiAio:
 
     async def _get_arduino_id(self):
         """
-        Retrieve arduino-telemetrix arduino id
+        Retrieve the server arduino id
+
+        This is a private method.
 
         """
         command = [PrivateConstants.ARE_U_THERE]
@@ -379,7 +399,10 @@ class TmxNano2040WifiAio:
     async def _get_firmware_version(self):
         """
         This method retrieves the
-        arduino-telemetrix firmware version
+        server's firmware version
+
+        This is a private method.
+
 
         """
         command = [PrivateConstants.GET_FIRMWARE_VERSION]
@@ -403,12 +426,15 @@ class TmxNano2040WifiAio:
         :param callback: Required callback function to report i2c data as a
                    result of read command
 
-
         callback returns a data list:
         [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
 
         """
-
+        if not self.i2c_active:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(
+                'I2C Write: set_pin_mode i2c never called.')
         await self._i2c_read_request(address, register, number_of_bytes,
                                      callback=callback)
 
@@ -438,6 +464,11 @@ class TmxNano2040WifiAio:
 
         """
 
+        if not self.i2c_active:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(
+                'I2C Write: set_pin_mode i2c never called.')
         await self._i2c_read_request(address, register, number_of_bytes,
                                      stop_transmission=False,
                                      callback=callback)
@@ -447,6 +478,8 @@ class TmxNano2040WifiAio:
         """
         This method requests the read of an i2c device. Results are retrieved
         via callback.
+
+        This is a private method.
 
         :param address: i2c device address
 
@@ -513,7 +546,9 @@ class TmxNano2040WifiAio:
         :param start_character: The character to loop back. It should be
                                 an integer.
 
-        :param callback: Looped back character will appear in the callback method
+        :param callback: Required callback method. The
+                         Looped back character is provided to
+                         the callback method.
 
         """
         command = [PrivateConstants.LOOP_COMMAND, ord(start_character)]
@@ -522,7 +557,7 @@ class TmxNano2040WifiAio:
 
     async def neo_pixel_set_value(self, pixel_number, r=0, g=0, b=0, auto_show=False):
         """
-        Set the selected pixel in the pixel array on the Pico to
+        Set the selected pixel in the pixel array on the Arduino Nano rp2040 to
         the value provided.
 
         :param pixel_number: pixel number
@@ -601,7 +636,7 @@ class TmxNano2040WifiAio:
 
     async def neopixel_show(self):
         """
-        Write the NeoPixel buffer stored in the Pico to the NeoPixel strip.
+        Write the NeoPixel buffer stored in the server to the NeoPixel strip.
 
         """
         if not self.neopixels_initiated:
@@ -648,7 +683,7 @@ class TmxNano2040WifiAio:
         :param differential: difference in previous to current value before
                              report will be generated
 
-        :param callback: callback function
+        :param callback: Required callback function.
 
 
         callback returns a data list:
@@ -668,9 +703,9 @@ class TmxNano2040WifiAio:
     async def set_pin_mode_dht(self, pin, callback=None):
         """
 
-        :param pin: connection pin
+        :param pin: data pin
 
-        :param callback: callback function
+        :param callback: Required callback function
 
         Error Callback: [DHT REPORT Type, DHT_ERROR_NUMBER, PIN, Time]
 
@@ -684,7 +719,7 @@ class TmxNano2040WifiAio:
                 await self.shutdown()
             raise RuntimeError('set_pin_mode_dht: A Callback must be specified')
 
-        if self.dht_count < PrivateConstants.MAX_DHTS - 1:
+        if self.dht_count < PrivateConstants.MAX_DHTS:
             self.dht_callbacks[pin] = callback
             self.dht_count += 1
 
@@ -702,7 +737,7 @@ class TmxNano2040WifiAio:
 
         :param pin_number: arduino pin number
 
-        :param callback: callback function
+        :param callback: Required callback function.
 
 
         callback returns a data list:
@@ -724,7 +759,7 @@ class TmxNano2040WifiAio:
 
         :param pin_number: arduino pin number
 
-        :param callback: callback function
+        :param callback: Required callback function.
 
 
         callback returns a data list:
@@ -774,7 +809,7 @@ class TmxNano2040WifiAio:
                                enable=True):
         """
 
-        :param callback: callback function
+        :param callback: Required callback function.
 
         :param enable: True: start monitoring, False: stop monitoring
 
@@ -796,7 +831,7 @@ class TmxNano2040WifiAio:
                                       mic_type=PrivateConstants.MICROPHONE_MONO,
                                       frequency=16000):
         """
-        :param callback: callback function
+        :param callback: Required callback function.
 
         :param enable: True: start monitoring, False: stop monitoring
 
@@ -828,7 +863,7 @@ class TmxNano2040WifiAio:
     async def set_pin_mode_neopixel(self, pin_number=28, num_pixels=8,
                                     fill_r=0, fill_g=0, fill_b=0):
         """
-        Initialize the pico for NeoPixel control. Fill with rgb values specified.
+        Initialize the Arduino nano for NeoPixel control. Fill with rgb values specified.
 
         Default: Set all the pixels to off.
 
@@ -906,7 +941,7 @@ class TmxNano2040WifiAio:
 
         :param echo_pin:
 
-        :param callback: callback
+        :param callback: Required callback function.
 
         callback data: [PrivateConstants.SONAR_DISTANCE, trigger_pin, distance_value, time_stamp]
 
@@ -969,29 +1004,20 @@ class TmxNano2040WifiAio:
         if type(chip_select_list) != list:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError('chip_select_list must be in the form of a list')
         if not chip_select_list:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError('Chip select pins were not specified')
+
+        self.spi_enabled = True
 
         command = [PrivateConstants.SPI_INIT, len(chip_select_list)]
 
-        # validate chip select pins
         for pin in chip_select_list:
-            if pin not in self.valid_spi_cs_pins:
-                if self.shutdown_on_exception:
-                    await self.shutdown()
-
-                raise RuntimeError('Chip select pin is not valid')
-            self.cs_pins_enabled.append(pin)
-            # add pin to command
             command.append(pin)
-
+            self.cs_pins_enabled.append(pin)
         await self._send_command(command)
-        self.spi_enabled = True
 
     async def servo_write(self, pin_number, angle):
         """
@@ -1023,17 +1049,14 @@ class TmxNano2040WifiAio:
 
         :param select: 0=select, 1=deselect
         """
-
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError(f'spi_cs_control: SPI interface is not enabled.')
 
         if chip_select_pin not in self.cs_pins_enabled:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError(f'spi_cs_control: chip select pin never enabled.')
         command = [PrivateConstants.SPI_CS_CONTROL, chip_select_pin, select]
         await self._send_command(command)
@@ -1055,20 +1078,18 @@ class TmxNano2040WifiAio:
         callback returns a data list:
         [SPI_READ_REPORT, count of data bytes read, data bytes, time-stamp]
 
-        SPI_READ_REPORT = 15
+        SPI_READ_REPORT = 13
 
         """
 
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError(f'spi_read_blocking: SPI interface is not enabled.')
 
         if not call_back:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError('spi_read_blocking: A Callback must be specified')
 
         self.spi_callback = call_back
@@ -1084,25 +1105,17 @@ class TmxNano2040WifiAio:
 
         See Arduino SPI reference materials for details.
 
-        :param clock_divisor:   SPI_CLOCK_DIV4 = 0x00 (default)
+        :param clock_divisor:
 
-                                SPI_CLOCK_DIV16 = 0x01
+        :param bit_order:
 
-                                SPI_CLOCK_DIV64 = 0x02
-
-                                SPI_CLOCK_DIV128 =0x03
-
-                                SPI_CLOCK_DIV2 = 0x04
-
-                                SPI_CLOCK_DIV8 = 0x05
-
-                                SPI_CLOCK_DIV32 = 0x06
-
-        :param bit_order:   LSBFIRST = 0
+                            LSBFIRST = 0
 
                             MSBFIRST = 1 (default)
 
-        :param data_mode:   SPI_MODE0 = 0x00 (default)
+        :param data_mode:
+
+                            SPI_MODE0 = 0x00 (default)
 
                             SPI_MODE1  = 0x04
 
@@ -1111,31 +1124,11 @@ class TmxNano2040WifiAio:
                             SPI_MODE3 = 0x0C
 
         """
+
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError(f'spi_set_format: SPI interface is not enabled.')
-
-        if not 0 < clock_divisor <= 6:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-
-            raise RuntimeError('spi_set_format: clock_divisor out of range.')
-
-        if not 0 < bit_order <= 1:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-
-            raise RuntimeError('spi_set_format: bit_order out of range.')
-
-        valid_modes = [0, 4, 8, 12]
-
-        if data_mode not in valid_modes:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-
-            raise RuntimeError('spi_set_format: data_mode not a valid value.')
 
         command = [PrivateConstants.SPI_SET_FORMAT, clock_divisor, bit_order,
                    data_mode]
@@ -1145,20 +1138,19 @@ class TmxNano2040WifiAio:
         """
         Write a list of bytes to the SPI device.
 
-        :param bytes_to_write: A list of bytes to write. This must be in the form of a
-        list.
+        :param bytes_to_write: A list of bytes to write. This must
+                                be in the form of a list.
 
         """
+
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError(f'spi_write_blocking: SPI interface is not enabled.')
 
         if type(bytes_to_write) is not list:
             if self.shutdown_on_exception:
                 await self.shutdown()
-
             raise RuntimeError('spi_write_blocking: bytes_to_write must be a list.')
 
         command = [PrivateConstants.SPI_WRITE_BLOCKING, len(bytes_to_write)]
@@ -1183,8 +1175,8 @@ class TmxNano2040WifiAio:
                              value to be achieved for report to
                              be generated
 
-        :param callback: A reference to a call back function to be
-                         called when pin data value changes
+        :param callback: A reference to a required call back function to be
+                         called when pin data value changes.
 
         """
 
@@ -1230,23 +1222,28 @@ class TmxNano2040WifiAio:
         If any exceptions are thrown, they are ignored.
         """
         self.shutdown_flag = True
+
         if self.imu_enabled:
             await self.set_pin_mode_imu(enable=False)
-            await asyncio.sleep(.2)
+            await asyncio.sleep(.1)
             # let data drain
         if self.mic_enabled:
             await self.set_pin_mode_microphone(enable=False)
-            await asyncio.sleep(.2)
+            await asyncio.sleep(.21)
+
         try:
+
             command = [PrivateConstants.STOP_ALL_REPORTS]
             await self._send_command(command)
-            await asyncio.sleep(.5)
+            await asyncio.sleep(.1)
 
-            command = [PrivateConstants.RESET]
+            command = [PrivateConstants.RESET, self.reset_board_on_shutdown]
             await self._send_command(command)
 
+            await asyncio.sleep(.3)
             try:
                 self.sock.shutdown(socket.SHUT_RDWR)
+                # self.sock.close_down()
                 self.sock.close()
             except Exception:
                 pass
@@ -1256,8 +1253,8 @@ class TmxNano2040WifiAio:
             if self.close_loop_on_shutdown:
                 self.loop.stop()
 
-        except Exception:
-            raise RuntimeError('Shutdown failed - could not send stop streaming message')
+        except Exception:  # ignore the exception
+            pass
 
     '''
     report message handlers
@@ -1287,6 +1284,7 @@ class TmxNano2040WifiAio:
 
         :param data: digital message
 
+
         """
         pin = data[0]
         value = data[1]
@@ -1298,7 +1296,7 @@ class TmxNano2040WifiAio:
 
     async def _firmware_message(self, data):
         """
-        Telemetrix4Arduino firmware version message
+        Server firmware version message. This is a private method.
 
         :param data: data[0] = major number, data[1] = minor number.
 
@@ -1309,7 +1307,7 @@ class TmxNano2040WifiAio:
 
     async def _i2c_read_report(self, data):
         """
-        Execute callback for i2c reads.
+        Execute callback for i2c reads. This is a private method.
 
         :param data: [I2C_READ_REPORT, number of bytes read, address, register,
         bytes read..., time-stamp]
@@ -1331,7 +1329,7 @@ class TmxNano2040WifiAio:
 
     async def _i2c_too_few(self, data):
         """
-        I2c reports too few bytes received
+        I2c reports too few bytes received. This is a private method.
 
         :param data: data[0] = device address
         """
@@ -1343,7 +1341,7 @@ class TmxNano2040WifiAio:
 
     async def _i2c_too_many(self, data):
         """
-        I2c reports too few bytes received
+        I2c reports too few bytes received. This is a private method.
 
         :param data: data[0] = device address
         """
@@ -1355,14 +1353,14 @@ class TmxNano2040WifiAio:
 
     async def _i_am_here(self, data):
         """
-        Reply to are_u_there message
+        Reply to are_u_there message. This is a private method.
         :param data: arduino id
         """
         self.reported_arduino_id = data[0]
 
     async def _report_debug_data(self, data):
         """
-        Print debug data sent from Arduino
+        Print debug data sent from Arduino. This is a private method.
         :param data: data[0] is a byte followed by 2
                      bytes that comprise an integer
         :return:
@@ -1372,7 +1370,7 @@ class TmxNano2040WifiAio:
 
     async def _report_loop_data(self, data):
         """
-        Print data that was looped back
+        Print data that was looped back. This is a private method.
         :param data: byte of loop back data
         :return:
         """
@@ -1396,7 +1394,7 @@ class TmxNano2040WifiAio:
 
     async def _servo_unavailable(self, report):
         """
-        Message if no servos are available for use.
+        Message if no servos are available for use. This is a private method.
         :param report: pin number
         """
         if self.shutdown_on_exception:
@@ -1407,6 +1405,7 @@ class TmxNano2040WifiAio:
 
     async def _sonar_distance_report(self, report):
         """
+        This is a private method.
 
         :param report: data[0] = trigger pin, data[1] and data[2] = distance
 
@@ -1427,6 +1426,7 @@ class TmxNano2040WifiAio:
 
     async def _imu_report(self, report):
         """
+        This is private method.
 
         :param report: ax, ay, az, gx, gy, gz expressed as integer and fractional
                        values, followed by a positivity flag
@@ -1465,14 +1465,16 @@ class TmxNano2040WifiAio:
         if report[17]:
             gz = gz * -1.0
 
+        time_stamp = time.time()
         # build report data
         cb_list = [PrivateConstants.IMU_REPORT, ax, ay, az,
-                   gx, gy, gz]
+                   gx, gy, gz, time_stamp]
 
         await cb(cb_list)
 
     async def _microphone_report(self, report):
         """
+        This is a private method.
 
         :param report: [audio_level_msb, audio_level_lsb]
         """
@@ -1482,46 +1484,47 @@ class TmxNano2040WifiAio:
             value = report[0], report[1]
             value = bytes(value)
             value = struct.unpack(">h", value)
+            time_stamp = time.time()
             cb_list = [PrivateConstants.MICROPHONE_REPORT, value[0],
-                       self.mic_current_channel]
+                       self.mic_current_channel, time_stamp]
             if self.mic_type == PrivateConstants.AT_MICROPHONE_STEREO:
                 if self.mic_current_channel == 'l':
                     self.mic_current_channel = 'r'
                 else:
                     self.mic_current_channel = 'l'
+
             await cb(cb_list)
 
     async def _dht_report(self, report):
         """
-                This is the dht report handler method.
+        This is the dht report handler method.
 
-                :param report:        data[0] = report error return
-                                            No Errors = 0
+        :param report:
+               data[0] = report error return
+                        No Errors = 0
 
-                                            Checksum Error = 1
+                        Checksum Error = 1
 
-                                            Timeout Error = 2
+                        Timeout Error = 2
 
-                                            Invalid Value = 999
+                        Invalid Value = 999
 
-                                        data[1] = pin number
+               data[1] = pin number
 
-                                        data[2] = dht type 11 or 22
+               data[2] = humidity positivity flag
 
-                                        data[3] = humidity positivity flag
+               data[3] = temperature positivity value
 
-                                        data[4] = temperature positivity value
+               data[4] = humidity integer
 
-                                        data[5] = humidity integer
+               data[5] = humidity fractional value
 
-                                        data[6] = humidity fractional value
+               data[6] = temperature integer
 
-                                        data[7] = temperature integer
-
-                                        data[8] = temperature fractional value
+               data[7] = temperature fractional value
 
 
-                """
+        """
         if report[0]:  # DHT_ERROR
             # error report
             # data[0] = report sub type, data[1] = pin, data[2] = error message
@@ -1544,21 +1547,16 @@ class TmxNano2040WifiAio:
             await self.dht_callbacks[report[1]](message)
 
     async def _spi_report(self, report):
+        """
+        This is a private method.
+        :param report: report data
+        """
 
         cb_list = [PrivateConstants.SPI_REPORT, report[0]] + report[1:]
 
         cb_list.append(time.time())
 
         await self.spi_callback(cb_list)
-
-    # def _run_threads(self):
-    #     self.run_event.set()
-
-    # def _is_running(self):
-    #     return self.run_event.is_set()
-
-    # def _stop_threads(self):
-    #     self.run_event.clear()
 
     async def _arduino_report_dispatcher(self):
         """

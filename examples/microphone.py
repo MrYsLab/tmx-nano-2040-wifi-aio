@@ -19,54 +19,53 @@ import asyncio
 import sys
 import time
 from tmx_nano2040_wifi_aio import tmx_nano2040_wifi_aio
-from tmx_nano2040_wifi_aio import telemetrix_aio_socket
 
 """
-Loopback some data to assure that data can be sent and received between
-the Telemetrix client and arduino-telemetrix server.
+This file demonstrates reading data from the microphone. 
 """
 
 
 async def the_callback(data):
     """
-    A callback function to report receive the looped back data
+    A callback function to report data changes.
 
-    :param data: [looped back data]
+    :param data: [pin_mode, pin, current_reported_value,  timestamp]
     """
-    print(f'Looped back: {chr(data[0])}')
+    formatted_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[3]))
+
+    print(f'MICROPHONE_REPORT at {formatted_time}: channel type: {data[2]}  Value = {data[1]}')
 
 
-async def loop_back(my_board, loop_back_data):
+async def mic_read(my_board):
     """
-    This function will request that the supplied characters be
-    sent to the board and looped back and printed out to the console.
-
+    Enable the microphone for reports
     :param my_board: a tmx_nano2040_wifi_aio instance
-    :param loop_back_data: A list of characters to have looped back
+
     """
+    await my_board.set_pin_mode_microphone(callback=the_callback)
+
+    # run forever waiting for input changes
     try:
-        for data in loop_back_data:
-            await my_board.loop_back(data, callback=the_callback)
-            print(f'Sending: {data}')
-            await asyncio.sleep(.2)
-        await asyncio.sleep(1)
+        while True:
+            await asyncio.sleep(.001)
+
     except KeyboardInterrupt:
-        my_board.shutdown()
+        await my_board.shutdown()
         sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()
 
-# instantiate
+# instantiate tmx_nano2040_wifi_aio
 board = tmx_nano2040_wifi_aio.TmxNano2040WifiAio(ip_address='192.168.2.246')
-char_list = ['A', 'B', 'Z']
+
 try:
     # start the main function
-    loop.run_until_complete(loop_back(board, char_list))
-    time.sleep(.1)
+    loop.run_until_complete(mic_read(board))
     loop.run_until_complete(board.shutdown())
 
-except KeyboardInterrupt:
+except (KeyboardInterrupt, RuntimeError) as e:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
 

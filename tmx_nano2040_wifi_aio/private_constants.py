@@ -55,15 +55,6 @@ class PrivateConstants:
     SPI_SET_FORMAT = 29
     SPI_CS_CONTROL = 30
     DHT_NEW = 31
-    ONE_WIRE_INIT = 32
-    ONE_WIRE_RESET = 33
-    ONE_WIRE_SELECT = 34
-    ONE_WIRE_SKIP = 35
-    ONE_WIRE_WRITE = 36
-    ONE_WIRE_READ = 37
-    ONE_WIRE_RESET_SEARCH = 38
-    ONE_WIRE_SEARCH = 39
-    ONE_WIRE_CRC8 = 40
 
     # reports
     # debug data from Arduino
@@ -80,7 +71,6 @@ class PrivateConstants:
     MICROPHONE_REPORT = 13
     DHT_REPORT = 14
     SPI_REPORT = 15
-    ONE_WIRE_REPORT = 16
 
     DEBUG_PRINT = 99
 
@@ -125,7 +115,7 @@ class PrivateConstants:
     LED_B = 26
 
     # maximum number of DHT devices allowed
-    MAX_DHTS = 6
+    MAX_DHTS = 2
 
     # DHT Report sub-types
     DHT_DATA = 0
