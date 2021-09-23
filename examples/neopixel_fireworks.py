@@ -67,7 +67,7 @@ async def fireworks(board):
             await asyncio.sleep(.1)
             await board.neopixel_clear(True)
             await asyncio.sleep(.1)
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, ConnectionResetError):
             await board.shutdown()
             sys.exit(0)
 # get the event loop
@@ -78,4 +78,5 @@ my_board = tmx_nano2040_wifi_aio.TmxNano2040WifiAio(ip_address='192.168.2.246')
 try:
     loop.run_until_complete(fireworks(my_board))
 except KeyboardInterrupt:
+    loop.run_until_complete(my_board.shutdown())
     sys.exit(0)
