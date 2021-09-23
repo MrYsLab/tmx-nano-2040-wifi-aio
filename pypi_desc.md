@@ -1,12 +1,13 @@
 # Tmx-Nano-2040-WiFi-AIO
 
-
-Tmx-nano-2040-wifi-aio is a member of the Telemetrix family and is a Python asyncio client
+Tmx-nano-2040-wifi-aio is a member of the [Telemetrix](https://mryslab.github.io/telemetrix/) 
+family and is a Python asyncio client
 specifically tailored to remotely control and monitor
 the Arduino Nano RP2040 Connect using Python scripts running on your PC.
 
-When paired with the Telemetrix4Connect2040 custom Arduino server sketch, control and
-monitoring of the Arduino Nano RP2040 Connect accomplished used a Wi-Fi link between the
+When paired with the [Telemetrix4Connect2040](https://github.com/MrYsLab/Telemetrix4Connect2040)
+custom Arduino server sketch, control and
+monitoring of the Arduino Nano RP2040 Connect accomplished using a Wi-Fi link between the
 PC and the Arduino.
 
 This library supports the following features:
