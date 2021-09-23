@@ -35,8 +35,9 @@ from tmx_nano2040_wifi_aio.telemetrix_aio_socket import TelemetrixAioSocket
 # noinspection PyPep8,PyMethodMayBeStatic,GrazieInspection,PyBroadException,PyArgumentList
 class TmxNano2040WifiAio:
     """
-    This class exposes and implements the telemetrix API.
-    It uses asyncio to accommodate concurrency.
+    This class exposes and implements the telemetrix API for the
+    Arduino Nano RP2040 Connect using Python asyncio for concurrency.
+
     It includes the public API methods as well as
     a set of private methods.
 
@@ -58,12 +59,12 @@ class TmxNano2040WifiAio:
                              this value if your application does not
                              locate the Nano Connect.
 
-        :param sleep_tune: A tuning parameter (typically not changed by user)
+        :param sleep_tune: A tuning parameter (typically not changed by the user)
 
-        :param autostart: If you wish to manually call the start method within
-                          your application, then set this to False.
+        :param autostart: If you wish to call the start method within your
+                          application manually, then set this to False.
 
-        :param loop: optional user provided event loop
+        :param loop: optional user-provided event-loop
 
         :param shutdown_on_exception: call shutdown before raising
                                       a RunTimeError exception, or
@@ -73,13 +74,12 @@ class TmxNano2040WifiAio:
                                         performed when the shutdown method is called.
 
         :param close_loop_on_shutdown: If True, stop and close the event loop
-                                       when a shutdown is called or an exception
-                                       occurs
+                                       when a shutdown occurs.
 
-        :param ip_address: ip address of tcp/ip connected device.
-                           This is a required parameter
+        :param ip_address: This parameter is required. It must match the IP
+                           assigned to the Arduino Nano RP2040 Connect.
 
-        :param ip_port: ip port of tcp/ip connected device
+        :param ip_port: IP port of TCP/IP connected device
 
         """
 
@@ -303,11 +303,10 @@ class TmxNano2040WifiAio:
         """
         Set the specified pin to the specified value.
 
-        The maximum value for the Nano RP2040 is 256 and
-        you should validate this in your application.
+        The maximum value for the Nano RP2040 is 255.
 
 
-        :param pin: arduino pin number
+        :param pin: Arduino pin number
 
         :param value: pin value (maximum is 255)
 
@@ -343,7 +342,9 @@ class TmxNano2040WifiAio:
         """
         Disables analog reporting for a single analog pin.
 
-        :param pin: Analog pin number. For example for A0, the number is 0.
+        :param pin: Analog pin number. The pin number is specified
+                    without the "A" prefix. For example, pin A0
+                    is specified as 0.
 
         """
         command = [PrivateConstants.MODIFY_REPORTING,
@@ -365,9 +366,9 @@ class TmxNano2040WifiAio:
         """
         Enables analog reporting for the specified pin.
 
-        :param pin: Analog pin number. For example for A0, the number is 0.
-
-
+        :param pin: Analog pin number. The pin number is specified
+                    without the "A" prefix. For example, pin A0
+                    is specified as 0.
         """
         command = [PrivateConstants.MODIFY_REPORTING,
                    PrivateConstants.REPORTING_ANALOG_ENABLE, pin]
@@ -443,8 +444,8 @@ class TmxNano2040WifiAio:
                                             callback=None):
         """
         Read the specified number of bytes from the specified register for
-        the i2c device. This restarts the transmission after the read. It is
-        required for some i2c devices such as the MMA8452Q accelerometer.
+        the i2c device and restart transmission after the read. It is
+        required for some i2c devices, such as the MMA8452Q accelerometer.
 
 
         :param address: i2c device address
@@ -540,8 +541,8 @@ class TmxNano2040WifiAio:
 
     async def loop_back(self, start_character, callback=None):
         """
-        This is a debugging method to send a character to the
-        Arduino device, and have the device loop it back.
+        This debugging method sends a character to the Arduino device
+        and has the device loop it back.
 
         :param start_character: The character to loop back. It should be
                                 an integer.
@@ -610,7 +611,7 @@ class TmxNano2040WifiAio:
 
     async def neopixel_fill(self, r=0, g=0, b=0, auto_show=True):
         """
-        Fill all pixels with specified value
+        Fill all pixels with the specified RGB values.
 
         :param r: 0-255
 
@@ -992,10 +993,11 @@ class TmxNano2040WifiAio:
 
         Chip select pins may be any GPIO(except for A4 - A7) and D11, D12 and D13
 
-        :param chip_select_list: this is a list of pins to be used for chip select.
-                           The pins will be configured as output, and set to high
-                           ready to be used for chip select.
-                           NOTE: You must specify the chips select pins here!
+        :param chip_select_list: This is a list of pins to be used for chip-select.
+                                 The pins will be configured as output and set to high
+                                 for SPI device selection.
+
+                                 NOTE: You must specify the chips select pins here!
 
 
         command message: [command, number of cs pins, [cs pins...]]
