@@ -24,7 +24,7 @@ import sys
 class TelemetrixAioSocket:
     """
     This class encapsulates management of a tcp/ip connection that communicates
-    with the StandardFirmataWiFi
+    with the WiFi link.
     """
     def __init__(self, ip_address, ip_port, loop):
         self.ip_address = ip_address
