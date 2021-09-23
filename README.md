@@ -1,24 +1,84 @@
-# The Telemetrix Project
+# Tmx-Nano-2040-WiFi-AIO
 
-Telemetry is a system for collecting data on a remote device and then automatically transmitting the 
-collected data back to local receiving equipment for processing.
+Tmx-nano-2040-wifi-aio is a member of the Telemetrix family and is a Python asyncio client
+specifically tailored to remotely control and monitor
+the Arduino Nano RP2040 Connect using Python scripts running on your PC.
 
-The Telemetrix Project is a telemetry system explicitly designed for Arduino Core-based MCUs, using 
-Python on the local client and an 
-Arduino Core sketch, called 
-[Telemetrix4Arduino](https://github.com/MrYsLab/Telemetrix4Arduino) on the Microcontroller Unit (MCU). 
+When paired with the Telemetrix4Connect2040 custom Arduino server sketch, control and
+monitoring of the Arduino Nano RP2040 Connect accomplished used a Wi-Fi link between the
+PC and the Arduino.
 
-In addition, WiFi is supported for the ESP8266 when used in conjunction with 
-[Telemetrix4Esp8266](https://github.com/MrYsLab/Telemetrix4Esp8266).
+This library supports the following features:
+* Analog and Digital Input
+* Digital Outputs including PWM
+* Onboard devices:
+    * IMU
+    * Microphone
+    * RGB LED
+* I2C device communications.
+* SPI device communications.
+* HC-SR04 Type distance sensors.
+* DHT Type humidity/temperature sensors.
+* Servo motors.
+* NeoPixel strips.
 
-It is designed to be user extensible so that you may add support for sensors and actuators
-of your choosing.
 
-A [User's Guide](https://mryslab.github.io/telemetrix/) explaining installation and use is available online.
+A [User's Guide](https://mryslab.github.io/tmx-nano-2040-wifi-aio/) explaining 
+installation and use is available online.
 
-A Python API for may be found [here.](https://htmlpreview.github.io/?https://github.com/MrYsLab/telemetrix/blob/master/html/telemetrix/index.html) 
+The Python API for may be found [here.](https://htmlpreview.github.io/?https://github.com/MrYsLab/tmx-nano-2040-wifi-aio/blob/master/html/tmx_nano2040_wifi_aio/index.html) 
 
-This project was developed in phases, and the directories for those phases were left 
-intact. During the development
-phase, the phases were discussed on the 
-[Bots In Pieces](https://mryslab.github.io/bots-in-pieces/arduino,stm32,firmata/2020/09/20/telemetrix-phase-1.html) blog.
+Here is a sample project that blinks the Arduino Board LED:
+
+```
+import asyncio
+import sys
+
+from tmx_nano2040_wifi_aio import tmx_nano2040_wifi_aio
+
+"""
+Setup a pin for digital output and output a signal
+and toggle the pin. Do this 4 times.
+"""
+
+# some globals
+DIGITAL_PIN = 13  # arduino pin number
+
+
+async def blink(my_board, pin):
+    """
+    This function toggles a digital pin.
+
+    :param my_board: an tmx_nano2040_wifi_aio instance
+    :param pin: pin to be controlled
+    """
+
+    # set the pin mode
+    await my_board.set_pin_mode_digital_output(pin)
+
+    # toggle the pin 4 times and exit
+    for x in range(4):
+        print('ON')
+        await my_board.digital_write(pin, 0)
+        await asyncio.sleep(1)
+        print('OFF')
+        await my_board.digital_write(pin, 1)
+        await asyncio.sleep(1)
+
+
+# get the event loop
+loop = asyncio.get_event_loop()
+
+# instantiate tmx_nano2040_wifi_aio
+board = tmx_nano2040_wifi_aio.TmxNano2040WifiAio(ip_address='192.168.2.246')
+
+try:
+    # start the main function
+    loop.run_until_complete(blink(board, DIGITAL_PIN))
+    loop.run_until_complete(board.shutdown())
+
+except KeyboardInterrupt:
+    loop.run_until_complete(board.shutdown())
+    sys.exit(0)
+
+```

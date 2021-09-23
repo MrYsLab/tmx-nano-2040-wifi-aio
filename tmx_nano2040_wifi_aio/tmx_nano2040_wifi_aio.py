@@ -44,7 +44,7 @@ class TmxNano2040WifiAio:
     """
 
     # noinspection PyPep8,PyPep8,PyPep8
-    def __init__(self, arduino_wait=1,
+    def __init__(self, arduino_wait=.01,
                  sleep_tune=0.000001,
                  autostart=True,
                  loop=None,
