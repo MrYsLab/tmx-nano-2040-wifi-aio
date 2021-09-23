@@ -48,8 +48,8 @@ async def loop_back(my_board, loop_back_data):
         for data in loop_back_data:
             await my_board.loop_back(data, callback=the_callback)
             print(f'Sending: {data}')
-            await asyncio.sleep(.2)
-        await asyncio.sleep(1)
+            await asyncio.sleep(.1)
+        await asyncio.sleep(.1)
     except KeyboardInterrupt:
         my_board.shutdown()
         sys.exit(0)
