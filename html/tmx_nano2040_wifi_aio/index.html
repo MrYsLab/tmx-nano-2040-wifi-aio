@@ -87,7 +87,8 @@ class TmxNano2040WifiAio:
     &#34;&#34;&#34;
 
     # noinspection PyPep8,PyPep8,PyPep8
-    def __init__(self, arduino_wait=1,
+    def __init__(self, arduino_wait=.01,
+                 instance_id=1,
                  sleep_tune=0.000001,
                  autostart=True,
                  loop=None,
@@ -101,6 +102,8 @@ class TmxNano2040WifiAio:
                              The time is specified in seconds. Increase
                              this value if your application does not
                              locate the Nano Connect.
+
+        :param instance_id: value must the value set in the server.
 
         :param sleep_tune: A tuning parameter (typically not changed by the user)
 
@@ -207,6 +210,7 @@ class TmxNano2040WifiAio:
 
         # save input parameters as instance variables
         self.arduino_wait = arduino_wait
+        self.instance_id = instance_id
         self.sleep_tune = sleep_tune
         self.shutdown_on_exception = shutdown_on_exception
 
@@ -325,6 +329,9 @@ class TmxNano2040WifiAio:
 
         self.the_task = self.loop.create_task(self._arduino_report_dispatcher())
 
+        # getting instance ID
+        await self._get_arduino_id()
+
         # get telemetrix firmware version and print it
         print(&#39;\nRetrieving Telemetrix4Connect2040 firmware ID...&#39;)
         await self._get_firmware_version()
@@ -439,6 +446,8 @@ class TmxNano2040WifiAio:
         await self._send_command(command)
         # provide time for the reply
         await asyncio.sleep(.5)
+        if self.reported_arduino_id != self.instance_id:
+            raise RuntimeError(&#34;Client and Server Instance ID&#39;s Do Not Match.&#34;)
 
     async def _get_firmware_version(self):
         &#34;&#34;&#34;
@@ -1647,7 +1656,7 @@ class TmxNano2040WifiAio:
 <dl>
 <dt id="tmx_nano2040_wifi_aio.tmx_nano2040_wifi_aio.TmxNano2040WifiAio"><code class="flex name class">
 <span>class <span class="ident">TmxNano2040WifiAio</span></span>
-<span>(</span><span>arduino_wait=1, sleep_tune=1e-06, autostart=True, loop=None, shutdown_on_exception=True, reset_board_on_shutdown=True, close_loop_on_shutdown=True, ip_address=None, ip_port=31335)</span>
+<span>(</span><span>arduino_wait=0.01, instance_id=1, sleep_tune=1e-06, autostart=True, loop=None, shutdown_on_exception=True, reset_board_on_shutdown=True, close_loop_on_shutdown=True, ip_address=None, ip_port=31335)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This class exposes and implements the telemetrix API for the
@@ -1658,6 +1667,7 @@ a set of private methods.</p>
 The time is specified in seconds. Increase
 this value if your application does not
 locate the Nano Connect.</p>
+<p>:param instance_id: value must the value set in the server.</p>
 <p>:param sleep_tune: A tuning parameter (typically not changed by the user)</p>
 <p>:param autostart: If you wish to call the start method within your
 application manually, then set this to False.</p>
@@ -1688,7 +1698,8 @@ assigned to the Arduino Nano RP2040 Connect.</p>
     &#34;&#34;&#34;
 
     # noinspection PyPep8,PyPep8,PyPep8
-    def __init__(self, arduino_wait=1,
+    def __init__(self, arduino_wait=.01,
+                 instance_id=1,
                  sleep_tune=0.000001,
                  autostart=True,
                  loop=None,
@@ -1702,6 +1713,8 @@ assigned to the Arduino Nano RP2040 Connect.</p>
                              The time is specified in seconds. Increase
                              this value if your application does not
                              locate the Nano Connect.
+
+        :param instance_id: value must the value set in the server.
 
         :param sleep_tune: A tuning parameter (typically not changed by the user)
 
@@ -1808,6 +1821,7 @@ assigned to the Arduino Nano RP2040 Connect.</p>
 
         # save input parameters as instance variables
         self.arduino_wait = arduino_wait
+        self.instance_id = instance_id
         self.sleep_tune = sleep_tune
         self.shutdown_on_exception = shutdown_on_exception
 
@@ -1926,6 +1940,9 @@ assigned to the Arduino Nano RP2040 Connect.</p>
 
         self.the_task = self.loop.create_task(self._arduino_report_dispatcher())
 
+        # getting instance ID
+        await self._get_arduino_id()
+
         # get telemetrix firmware version and print it
         print(&#39;\nRetrieving Telemetrix4Connect2040 firmware ID...&#39;)
         await self._get_firmware_version()
@@ -2040,6 +2057,8 @@ assigned to the Arduino Nano RP2040 Connect.</p>
         await self._send_command(command)
         # provide time for the reply
         await asyncio.sleep(.5)
+        if self.reported_arduino_id != self.instance_id:
+            raise RuntimeError(&#34;Client and Server Instance ID&#39;s Do Not Match.&#34;)
 
     async def _get_firmware_version(self):
         &#34;&#34;&#34;
@@ -4598,6 +4617,9 @@ when to complete the instantiation.</p></div>
     await self.sock.start()
 
     self.the_task = self.loop.create_task(self._arduino_report_dispatcher())
+
+    # getting instance ID
+    await self._get_arduino_id()
 
     # get telemetrix firmware version and print it
     print(&#39;\nRetrieving Telemetrix4Connect2040 firmware ID...&#39;)
