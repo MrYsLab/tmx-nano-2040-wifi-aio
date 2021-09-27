@@ -406,6 +406,10 @@ class TmxNano2040WifiAio:
         await asyncio.sleep(.5)
         if self.reported_arduino_id != self.instance_id:
             raise RuntimeError("Client and Server Instance ID's Do Not Match.")
+            if self.shutdown_on_exception:
+                await self.shutdown()
+                await asyncio.sleep(.3)
+
 
     async def _get_firmware_version(self):
         """
