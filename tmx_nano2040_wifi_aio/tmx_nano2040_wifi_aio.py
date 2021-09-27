@@ -60,7 +60,8 @@ class TmxNano2040WifiAio:
                              this value if your application does not
                              locate the Nano Connect.
 
-        :param instance_id: value must the value set in the server.
+        :param instance_id: value must match the value set in the server. It
+                            is used to identify the connected Arduino.
 
         :param sleep_tune: A tuning parameter (typically not changed by the user)
 
