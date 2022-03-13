@@ -25,7 +25,7 @@ This library supports the following features:
 * NeoPixel strips.
 
 
-A [User's Guide](https://mryslab.github.io/tmx-nano-2040-wifi-aio/) explaining 
+A [User's Guide](https://mryslab.github.io/telemetrix-nano-2040-wifi/) explaining 
 installation and use is available online.
 
 The Python API for may be found [here.](https://htmlpreview.github.io/?https://github.com/MrYsLab/tmx-nano-2040-wifi-aio/blob/master/html/tmx_nano2040_wifi_aio/index.html) 
