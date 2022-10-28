@@ -11,7 +11,7 @@ setup(
     packages=['tmx_nano2040_wifi_aio'],
     install_requires=['pyserial'],
 
-    version='1.0',
+    version='1.1',
     description="Remotely Control An Arduino Nano RP2040 Connect",
     long_description=long_description,
     long_description_content_type='text/markdown',

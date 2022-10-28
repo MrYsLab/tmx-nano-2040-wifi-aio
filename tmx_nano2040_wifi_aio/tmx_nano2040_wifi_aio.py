@@ -1457,7 +1457,7 @@ class TmxNano2040WifiAio:
                 await self.shutdown()
             raise RuntimeError('IMU ERROR')
 
-        ax = float(report[10] + report[1] / 100)
+        ax = float(report[0] + report[1] / 100)
         if report[2]:
             ax = ax * -1.0
 
