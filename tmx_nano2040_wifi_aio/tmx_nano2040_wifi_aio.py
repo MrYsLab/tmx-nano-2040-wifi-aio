@@ -1,6 +1,6 @@
 # noinspection GrazieInspection
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+ Copyright (c) 2021-2025 Alan Yorinks All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
@@ -405,11 +405,9 @@ class TmxNano2040WifiAio:
         # provide time for the reply
         await asyncio.sleep(.5)
         if self.reported_arduino_id != self.instance_id:
-            raise RuntimeError("Client and Server Instance ID's Do Not Match.")
             if self.shutdown_on_exception:
                 await self.shutdown()
-                await asyncio.sleep(.3)
-
+            raise RuntimeError("Client and Server Instance ID's Do Not Match.")
 
     async def _get_firmware_version(self):
         """
@@ -596,10 +594,11 @@ class TmxNano2040WifiAio:
                 await self.shutdown()
             raise RuntimeError('Pixel number is out of legal range')
 
-        if r and g and b not in range(256):
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError('Pixel value must be in the range of 0-255')
+        for color in [r, g, b]:
+            if not 0 <= color <= 255:
+                if self.shutdown_on_exception:
+                    await self.shutdown()
+                raise RuntimeError('RGB values must be in the range of 0-255')
 
         command = [PrivateConstants.SET_NEO_PIXEL, pixel_number, r, g, b, auto_show]
         await self._send_command(command)
@@ -639,10 +638,11 @@ class TmxNano2040WifiAio:
             if self.shutdown_on_exception:
                 await self.shutdown()
             raise RuntimeError('You must call set_pin_mode_neopixel first')
-        if r and g and b not in range(256):
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError('Pixel value must be in the range of 0-255')
+        for color in [r, g, b]:
+            if not 0 <= color <= 255:
+                if self.shutdown_on_exception:
+                    await self.shutdown()
+                raise RuntimeError('RGB values must be in the range of 0-255')
         command = [PrivateConstants.FILL_ALL_NEO_PIXELS, r, g, b, auto_show]
         await self._send_command(command)
 
@@ -908,11 +908,11 @@ class TmxNano2040WifiAio:
 
             raise RuntimeError('Neopixels previously initialized')
 
-        if fill_r or fill_g or fill_g not in range(256):
-            if self.shutdown_on_exception:
-                await self.shutdown()
-
-            raise RuntimeError('Pixel value must be in the range of 0-255')
+        for color in [fill_r, fill_g, fill_b]:
+            if not 0 <= color <= 255:
+                if self.shutdown_on_exception:
+                    await self.shutdown()
+                raise RuntimeError('RGB values must be in the range of 0-255')
 
         self.number_of_pixels = num_pixels
 
