@@ -626,7 +626,7 @@ USA</p>
                 await self.shutdown()
             raise RuntimeError(&#39;You must call set_pin_mode_neopixel first&#39;)
 
-        if pixel_number &gt; self.number_of_pixels:
+        if not 0 &lt;= pixel_number &lt; self.number_of_pixels:
             if self.shutdown_on_exception:
                 await self.shutdown()
             raise RuntimeError(&#39;Pixel number is out of legal range&#39;)
@@ -2039,7 +2039,7 @@ the callback method.</p></div>
             await self.shutdown()
         raise RuntimeError(&#39;You must call set_pin_mode_neopixel first&#39;)
 
-    if pixel_number &gt; self.number_of_pixels:
+    if not 0 &lt;= pixel_number &lt; self.number_of_pixels:
         if self.shutdown_on_exception:
             await self.shutdown()
         raise RuntimeError(&#39;Pixel number is out of legal range&#39;)
