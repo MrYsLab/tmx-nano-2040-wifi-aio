@@ -126,7 +126,7 @@ class TmxNano2040WifiAio:
         # NeoPixel D2 - D
         # digital output pins are 0-17
         # digital input pins are 0-17, 20 and 21
-        # analog pins are a0-a7 (a4, a5, a6, a7 are in the WifiNINA chip)
+        # analog pins are a0-a3
         # RGB are pseudo pins defined in private_constants.py
 
         self.digital_input_pins = [x for x in range(18)]
@@ -137,7 +137,7 @@ class TmxNano2040WifiAio:
                                          PrivateConstants.LED_B,
                                          PrivateConstants.LED_R])
 
-        self.analog_pins = [x for x in range(8)]
+        self.analog_pins = [x for x in range(4)]
 
         # map the D pin number to the GPIO pin number
         self.d_to_g_pin_map = {2: 25, 3: 15, 4: 16, 5: 17, 6: 18, 7: 19,
@@ -693,7 +693,7 @@ class TmxNano2040WifiAio:
         """
         Set a pin as an analog input.
 
-        :param pin_number: arduino pin number
+        :param pin_number: arduino pin number 0-3 (A0-A3)
 
         :param differential: difference in previous to current value before
                              report will be generated
